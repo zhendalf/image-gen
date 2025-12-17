@@ -5,12 +5,41 @@ import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import path from "node:path";
 
-const server = new McpServer({
-  name: "images-mcp",
-  version: "1.0.0",
-});
+// Constants
+const MIME_TYPES: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+};
 
-// Lazy-loaded clients
+// Response helpers
+const textContent = (text: string) => ({ content: [{ type: "text" as const, text }] });
+const errorResponse = (message: string) => textContent(`Error: ${message}`);
+const successResponse = (data: object) => textContent(JSON.stringify(data, null, 2));
+
+// File utilities
+function getMimeType(filePath: string): string {
+  return MIME_TYPES[path.extname(filePath).toLowerCase()] || "image/png";
+}
+
+async function readImageFile(imagePath: string): Promise<{ data: ArrayBuffer; name: string } | { error: string }> {
+  const file = Bun.file(imagePath);
+  if (!(await file.exists())) {
+    return { error: `Input image not found: ${imagePath}` };
+  }
+  return { data: await file.arrayBuffer(), name: path.basename(imagePath) };
+}
+
+async function saveImage(imageData: string, outputPath: string): Promise<{ path: string; bytes: number }> {
+  const buffer = Buffer.from(imageData, "base64");
+  const resolvedPath = path.resolve(outputPath);
+  await Bun.write(resolvedPath, buffer);
+  return { path: resolvedPath, bytes: buffer.length };
+}
+
+// Lazy-loaded API clients
 let openaiClient: OpenAI | null = null;
 let googleClient: GoogleGenAI | null = null;
 
@@ -32,7 +61,13 @@ function getGoogle(): GoogleGenAI {
   return googleClient;
 }
 
-// OpenAI image generation
+// Server setup
+const server = new McpServer({
+  name: "images-mcp",
+  version: "1.0.0",
+});
+
+// OpenAI image generation tool
 server.registerTool(
   "openai_generate_image",
   {
@@ -41,43 +76,23 @@ server.registerTool(
     inputSchema: {
       prompt: z.string().describe("Description of the image to generate, or editing instructions if input_images provided"),
       output_path: z.string().describe("Path where the image should be saved (e.g., /path/to/image.png)"),
-      model: z
-        .enum(["gpt-image-1.5"])
-        .default("gpt-image-1.5")
-        .describe("Model: gpt-image-1.5"),
-      input_images: z
-        .array(z.string())
-        .optional()
-        .describe("Optional array of image file paths to use as input for editing/reference"),
-      size: z
-        .enum(["auto", "1024x1024", "1536x1024", "1024x1536"])
-        .default("auto")
-        .describe("Image size: auto (default), 1024x1024 (square), 1536x1024 (landscape), 1024x1536 (portrait)"),
-      quality: z
-        .enum(["auto", "high", "medium", "low"])
-        .default("auto")
-        .describe("Image quality: auto (default), high, medium, low"),
-      background: z
-        .enum(["auto", "transparent", "opaque"])
-        .default("auto")
-        .describe("Background: auto (default), transparent, opaque"),
+      model: z.enum(["gpt-image-1.5"]).default("gpt-image-1.5").describe("Model: gpt-image-1.5"),
+      input_images: z.array(z.string()).optional().describe("Optional array of image file paths for editing/reference"),
+      size: z.enum(["auto", "1024x1024", "1536x1024", "1024x1536"]).default("auto").describe("Image size"),
+      quality: z.enum(["auto", "high", "medium", "low"]).default("auto").describe("Image quality"),
+      background: z.enum(["auto", "transparent", "opaque"]).default("auto").describe("Background type"),
     },
   },
   async ({ prompt, output_path, model, input_images, size, quality, background }) => {
     try {
       let imageData: string | undefined;
 
-      if (input_images && input_images.length > 0) {
-        // Use edit endpoint when input images are provided
+      if (input_images?.length) {
         const imageFiles: File[] = [];
         for (const imagePath of input_images) {
-          const file = Bun.file(imagePath);
-          if (!(await file.exists())) {
-            return { content: [{ type: "text", text: `Error: Input image not found: ${imagePath}` }] };
-          }
-          const buffer = await file.arrayBuffer();
-          const fileName = path.basename(imagePath);
-          imageFiles.push(new File([buffer], fileName, { type: "image/png" }));
+          const result = await readImageFile(imagePath);
+          if ("error" in result) return errorResponse(result.error);
+          imageFiles.push(new File([result.data], result.name, { type: "image/png" }));
         }
 
         const response = await getOpenAI().images.edit({
@@ -89,7 +104,6 @@ server.registerTool(
 
         imageData = (response as OpenAI.ImagesResponse).data?.[0]?.b64_json;
       } else {
-        // Use generate endpoint for new images
         const response = await getOpenAI().images.generate({
           model,
           prompt,
@@ -104,54 +118,25 @@ server.registerTool(
       }
 
       if (!imageData) {
-        return { content: [{ type: "text", text: "Error: No image data received from OpenAI" }] };
+        return errorResponse("No image data received from OpenAI");
       }
 
-      const buffer = Buffer.from(imageData, "base64");
-      const resolvedPath = path.resolve(output_path);
-      await Bun.write(resolvedPath, buffer);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                success: true,
-                path: resolvedPath,
-                bytes: buffer.length,
-                model,
-                size,
-                quality,
-                input_images_count: input_images?.length || 0,
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
+      const saved = await saveImage(imageData, output_path);
+      return successResponse({
+        success: true,
+        ...saved,
+        model,
+        size,
+        quality,
+        input_images_count: input_images?.length ?? 0,
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return { content: [{ type: "text", text: `Error: ${message}` }] };
+      return errorResponse(error instanceof Error ? error.message : String(error));
     }
   }
 );
 
-// Helper to get mime type from file extension
-function getMimeType(filePath: string): string {
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeTypes: Record<string, string> = {
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".webp": "image/webp",
-  };
-  return mimeTypes[ext] || "image/png";
-}
-
-// Google Gemini image generation
+// Gemini image generation tool
 server.registerTool(
   "gemini_generate_image",
   {
@@ -160,114 +145,65 @@ server.registerTool(
     inputSchema: {
       prompt: z.string().describe("Description of the image to generate, or editing instructions if input_images provided"),
       output_path: z.string().describe("Path where the image should be saved (e.g., /path/to/image.png)"),
-      model: z
-        .enum(["gemini-2.5-flash-image", "gemini-3-pro-image-preview"])
-        .default("gemini-2.5-flash-image")
-        .describe("Model: gemini-2.5-flash-image (default, fast), gemini-3-pro-image-preview (advanced)"),
-      input_images: z
-        .array(z.string())
-        .optional()
-        .describe("Optional array of image file paths to use as input for editing/reference"),
-      aspect_ratio: z
-        .enum(["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"])
-        .optional()
-        .describe("Aspect ratio: 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9"),
-      image_size: z
-        .enum(["1K", "2K", "4K"])
-        .optional()
-        .describe("Image size: 1K, 2K, 4K"),
+      model: z.enum(["gemini-2.5-flash-image", "gemini-3-pro-image-preview"]).default("gemini-2.5-flash-image").describe("Model"),
+      input_images: z.array(z.string()).optional().describe("Optional array of image file paths for editing/reference"),
+      aspect_ratio: z.enum(["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]).optional().describe("Aspect ratio"),
+      image_size: z.enum(["1K", "2K", "4K"]).optional().describe("Image size"),
     },
   },
   async ({ prompt, output_path, model, input_images, aspect_ratio, image_size }) => {
     try {
-      // Build contents array with text and optional images
-      const contents: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
+      const contents: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [{ text: prompt }];
 
-      // Add text prompt
-      contents.push({ text: prompt });
-
-      // Add input images if provided
-      if (input_images && input_images.length > 0) {
+      if (input_images?.length) {
         for (const imagePath of input_images) {
-          const file = Bun.file(imagePath);
-          if (!(await file.exists())) {
-            return { content: [{ type: "text", text: `Error: Input image not found: ${imagePath}` }] };
-          }
-          const imageBuffer = await file.arrayBuffer();
-          const base64Data = Buffer.from(imageBuffer).toString("base64");
+          const result = await readImageFile(imagePath);
+          if ("error" in result) return errorResponse(result.error);
           contents.push({
             inlineData: {
               mimeType: getMimeType(imagePath),
-              data: base64Data,
+              data: Buffer.from(result.data).toString("base64"),
             },
           });
         }
       }
 
-      // Build config
-      const config: {
-        responseModalities: string[];
-        imageConfig?: { aspectRatio?: string; imageSize?: string };
-      } = {
+      const config: { responseModalities: string[]; imageConfig?: { aspectRatio?: string; imageSize?: string } } = {
         responseModalities: ["IMAGE", "TEXT"],
       };
 
       if (aspect_ratio || image_size) {
-        config.imageConfig = {};
-        if (aspect_ratio) config.imageConfig.aspectRatio = aspect_ratio;
-        if (image_size) config.imageConfig.imageSize = image_size;
+        config.imageConfig = {
+          ...(aspect_ratio && { aspectRatio: aspect_ratio }),
+          ...(image_size && { imageSize: image_size }),
+        };
       }
 
-      const response = await getGoogle().models.generateContent({
-        model,
-        contents,
-        config,
-      });
-
+      const response = await getGoogle().models.generateContent({ model, contents, config });
       const parts = response.candidates?.[0]?.content?.parts;
       const imagePart = parts?.find((part) => part.inlineData?.data);
 
       if (!imagePart?.inlineData?.data) {
         const textPart = parts?.find((part) => part.text);
-        const errorMsg = textPart?.text || "No image data received from Google";
-        return { content: [{ type: "text", text: `Error: ${errorMsg}` }] };
+        return errorResponse(textPart?.text || "No image data received from Google");
       }
 
-      const buffer = Buffer.from(imagePart.inlineData.data, "base64");
-      const resolvedPath = path.resolve(output_path);
-      await Bun.write(resolvedPath, buffer);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                success: true,
-                path: resolvedPath,
-                bytes: buffer.length,
-                model,
-                aspect_ratio,
-                image_size,
-                input_images_count: input_images?.length || 0,
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
+      const saved = await saveImage(imagePart.inlineData.data, output_path);
+      return successResponse({
+        success: true,
+        ...saved,
+        model,
+        aspect_ratio,
+        image_size,
+        input_images_count: input_images?.length ?? 0,
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return { content: [{ type: "text", text: `Error: ${message}` }] };
+      return errorResponse(error instanceof Error ? error.message : String(error));
     }
   }
 );
 
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Images MCP server running on stdio");
-}
-
-main().catch(console.error);
+// Start server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+console.error("Images MCP server running on stdio");
