@@ -2,15 +2,11 @@
   "mcpServers": {
     "images": {
       "type": "stdio",
-      "command": "bun",
-      "args": [
-        "run",
-        "/Users/ebeloded/Code/projects/images-mcp/index.ts"
-      ],
+      "command": "bunx",
+      "args": ["images-mcp"],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
-        "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}"
       }
     }
   }
