@@ -1,11 +1,40 @@
 {
   "name": "images-mcp",
   "version": "1.0.0",
-  "module": "index.ts",
+  "description": "MCP server for AI image generation using OpenAI and Google Gemini",
   "type": "module",
-  "private": true,
+  "main": "index.ts",
+  "bin": {
+    "images-mcp": "index.ts"
+  },
+  "files": [
+    "index.ts"
+  ],
   "scripts": {
     "start": "bun run index.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "image-generation",
+    "openai",
+    "gemini",
+    "dall-e",
+    "gpt-image"
+  ],
+  "author": "ebeloded",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ebeloded/images-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ebeloded/images-mcp/issues"
+  },
+  "homepage": "https://github.com/ebeloded/images-mcp#readme",
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
     "@types/bun": "latest"
