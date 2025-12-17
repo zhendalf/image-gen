@@ -5,13 +5,13 @@ An MCP server for AI image generation.
 ## Tools
 
 ### `openai_generate_image`
-Generate or edit images using OpenAI GPT Image or DALL-E.
+Generate or edit images using OpenAI.
 
 | Parameter | Default | Options |
 |-----------|---------|---------|
 | `prompt` | required | Text description or editing instructions |
 | `output_path` | required | File path to save (.png) |
-| `model` | `gpt-image-1.5` | `gpt-image-1.5`, `gpt-image-1`, `gpt-image-1-mini`, `dall-e-3`, `dall-e-2` |
+| `model` | `gpt-image-1.5` | `gpt-image-1.5` |
 | `input_images` | - | Array of image file paths for editing/reference |
 | `size` | `auto` | `auto`, `1024x1024`, `1536x1024`, `1024x1536` |
 | `quality` | `auto` | `auto`, `high`, `medium`, `low` |
