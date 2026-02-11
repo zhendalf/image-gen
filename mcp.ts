@@ -87,17 +87,13 @@ server.registerTool(
   }
 );
 
-server.prompt(
+server.registerPrompt(
   "create-image",
   {
     description: "Generate an image using AI with professional prompting guidance",
-    arguments: [
-      {
-        name: "description",
-        description: "What image to create",
-        required: true,
-      },
-    ],
+    argsSchema: {
+      description: z.string().describe("What image to create"),
+    },
   },
   async ({ description }) => ({
     messages: [
