@@ -106,9 +106,10 @@ describe("parseArgs validation", () => {
 describe("cli executable behavior", () => {
   const cwd = path.resolve(import.meta.dir);
 
-  const runCli = (args: string[]) => {
+  const runCli = (args: string[], stdinText?: string) => {
     const result = Bun.spawnSync(["bun", "run", "cli.ts", ...args], {
       cwd,
+      stdin: stdinText === undefined ? "ignore" : new TextEncoder().encode(stdinText),
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -146,5 +147,25 @@ describe("cli executable behavior", () => {
     expect(gemini.exitCode).toBe(1);
     expect(gemini.stderr).toContain("Error: Unsupported output extension for gemini: .jpg");
     expect(gemini.stderr).toContain("Allowed extensions: .png");
+  });
+
+  it("reads prompt from stdin when --prompt is missing", () => {
+    const result = runCli(["openai", "--output", "out.gif"], "  prompt from stdin  \n");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Error: Unsupported output extension for openai: .gif");
+    expect(result.stderr).not.toContain("Missing required --prompt or --output");
+  });
+
+  it("treats empty trimmed stdin prompt as missing", () => {
+    const result = runCli(["openai", "--output", "out.gif"], "   \n\t  ");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Missing required --prompt or --output");
+  });
+
+  it("prioritizes --prompt over stdin", () => {
+    const result = runCli(["openai", "--prompt", "from-flag", "--output", "out.gif"], "from-stdin");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Error: Unsupported output extension for openai: .gif");
+    expect(result.stderr).not.toContain("Missing required --prompt or --output");
   });
 });

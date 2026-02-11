@@ -28,6 +28,7 @@ This is an MCP (Model Context Protocol) server that provides AI image generation
 - `schemas.ts`: Zod schemas and shared parameter constraints/defaults.
 
 Behavior highlights:
+- CLI prompt input supports `--prompt "...text..."` or piped stdin when `--prompt` is omitted.
 - Both providers support generation and editing (via `input_images` / CLI `--input`).
 - OpenAI uses `images.generate()` for new images and `images.edit()` when input images are provided.
 - Gemini builds a `contents` array with text prompt + optional inline image data.

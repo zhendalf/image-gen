@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { Cli, Command, Option } from "clipanion";
+import tty from "node:tty";
 import {
   generateGeminiImage,
   generateOpenAIImage,
@@ -35,7 +36,7 @@ Usage:
   images-mcp gemini  [args]  Generate/edit via Gemini
 
 Common args:
-  --prompt        Text prompt (required)
+  --prompt        Text prompt (required unless piped via stdin)
   --output        Output file path (required)
   --input         Input image path (repeatable)
 
@@ -297,7 +298,23 @@ export function parseArgs(argv: string[]): ParsedArgs {
 }
 
 async function run() {
-  const parsed = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  let parsed = parseArgs(argv);
+
+  const isMissingPromptOrOutput = parsed.mode === "help" && parsed.message === "Missing required --prompt or --output";
+  const hasPromptFlag = argv.includes("--prompt");
+  const stdinIsTTY = tty.isatty(0);
+
+  if (isMissingPromptOrOutput && !hasPromptFlag && !stdinIsTTY) {
+    const promptFromStdin = (await Bun.stdin.text()).trim();
+    if (promptFromStdin) {
+      const command = argv[0];
+      if (command === "openai" || command === "gemini") {
+        parsed = parseArgs([command, "--prompt", promptFromStdin, ...argv.slice(1)]);
+      }
+    }
+  }
+
   if (parsed.mode === "help") {
     printUsage(parsed.message);
     process.exit(parsed.message ? 1 : 0);

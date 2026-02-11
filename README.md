@@ -56,7 +56,7 @@ Common flags (both commands):
 
 | Flag | Required | Default | Notes |
 |---|---|---|---|
-| `--prompt <text>` | yes | - | Prompt or edit instructions |
+| `--prompt <text>` | yes* | - | Prompt or edit instructions (`*` can be read from stdin when `--prompt` is omitted) |
 | `--output <path>` | yes | - | Output file path |
 | `--input <path>` | no | - | Repeatable input image path |
 | `--inputs <path>` | no | - | Backward-compatible alias of `--input` (accepted, not shown in built-in help text) |
@@ -95,6 +95,18 @@ Generate with OpenAI:
 bun run cli.ts openai \
   --prompt "A neon cat in rainy Tokyo, cinematic lighting" \
   --output ./cat.png
+```
+
+Generate with OpenAI by piping prompt from stdin:
+
+```bash
+cat prompt.txt | bun run cli.ts openai --output ./cat.png
+```
+
+Or with stdin redirection:
+
+```bash
+bun run cli.ts openai --output ./cat.png < prompt.txt
 ```
 
 Edit with OpenAI:
@@ -153,7 +165,7 @@ Provider-specific success fields:
 
 Common parse failures:
 
-- Missing required flags:
+- Missing required flags (when neither `--prompt` nor non-empty piped stdin prompt is provided):
   - `Missing required --prompt or --output`
 - Missing value for a flag:
   - `Missing value for --output`
