@@ -180,7 +180,7 @@ function usageLineForFlag(flag: FlagSpec): string {
   return `  ${aliases.padEnd(20)} ${flag.description} (${required}${repeatable}${defaultText}${valuesText})`;
 }
 
-export function buildCliUsageText(): string {
+export function buildCliUsageText(keyStatus?: Partial<Record<Provider, boolean>>): string {
   const lines: string[] = [
     "image-gen (CLI)",
     "",
@@ -189,7 +189,9 @@ export function buildCliUsageText(): string {
 
   for (const provider of providerOrder) {
     const spec = providerSpecs[provider];
-    lines.push(`  image-gen ${provider}  [args]  ${spec.summary}`);
+    const keyIndicator =
+      keyStatus === undefined ? "" : keyStatus[provider] ? "  [key: ✓]" : "  [key: ✗]";
+    lines.push(`  image-gen ${provider}  [args]  ${spec.summary}${keyIndicator}`);
   }
 
   lines.push("", "Common args:");

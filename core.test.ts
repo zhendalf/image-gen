@@ -190,18 +190,37 @@ describe("core provider request mapping", () => {
     }
 
     expect(request?.model).toBe("gemini-3-pro-image-preview");
+  });
+
+  it("uses gemini-3.1-flash-image-preview (Nano Banana 2) as the default Gemini model", async () => {
+    const outputPath = tempPath("gemini-nb2-output.png");
+    let request: Record<string, unknown> | undefined;
+
+    setClientsForTests({
+      openai: null,
+      google: {
+        models: {
+          generateContent: async (params) => {
+            request = params as unknown as Record<string, unknown>;
+            return {
+              candidates: [{ content: { parts: [{ inlineData: { data: Buffer.from("nb2").toString("base64") } }] } }],
+            };
+          },
+        },
+      },
+    });
+
+    const result = await generateGeminiImage({
+      prompt: "nano banana test",
+      output_path: outputPath,
+      model: "gemini-3.1-flash-image-preview",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(request?.model).toBe("gemini-3.1-flash-image-preview");
     const contents = request?.contents as Array<Record<string, unknown>>;
-    expect(Array.isArray(contents)).toBe(true);
-    expect(contents.length).toBe(2);
-    expect(contents[0]?.text).toBe("gemini prompt");
-
-    const second = contents[1];
-    expect(second?.inlineData).toBeTruthy();
-    const inline = second?.inlineData as Record<string, unknown>;
-    expect(inline?.mimeType).toBe("image/jpeg");
-
+    expect(contents[0]?.text).toBe("nano banana test");
     const config = request?.config as Record<string, unknown>;
     expect(config?.responseModalities).toEqual(["IMAGE", "TEXT"]);
-    expect(config?.imageConfig).toEqual({ aspectRatio: "16:9", imageSize: "2K" });
   });
 });

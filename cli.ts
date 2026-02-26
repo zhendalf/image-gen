@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import tty from "node:tty";
+import { getGeminiApiKey, getGrokApiKey, getOpenAIApiKey } from "./config.ts";
 import {
   generateGeminiImage,
   generateGrokImage,
@@ -50,7 +51,12 @@ function printUsage(message?: string) {
     console.error(message);
   }
   const write = message ? console.error : console.log;
-  write(buildCliUsageText());
+  const keyStatus = {
+    openai: !!getOpenAIApiKey(),
+    gemini: !!getGeminiApiKey(),
+    grok: !!getGrokApiKey(),
+  };
+  write(buildCliUsageText(keyStatus));
 }
 
 const formatEnumError = (flag: string, value: string, allowed: readonly string[]) =>
