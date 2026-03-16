@@ -1,21 +1,17 @@
 ---
 name: image-gen
-description: Generate and edit images using the image-gen CLI. Use when the user asks to generate an image, create a picture, edit an image, or do anything involving AI image generation via OpenAI, Gemini, or Grok.
-argument-hint: [provider] [prompt]
-allowed-tools: Bash(bun run cli.ts *), Bash(cd *), Read
+description: "Generate and edit images using the image-gen CLI. Use when the user asks to generate an image, create a picture, edit an image, or do anything involving AI image generation via OpenAI, Gemini, or Grok."
+allowed-tools: "Bash(image-gen *), Read"
 ---
 
 # image-gen CLI
 
 Generate and edit AI images from the command line using OpenAI, Gemini, or Grok.
 
-**Location**: `/Users/ebeloded/Code/projects/image-gen`
-
 ## Quick start
 
 ```bash
-cd /Users/ebeloded/Code/projects/image-gen
-bun run cli.ts <provider> --prompt "..." --output /path/to/image.png
+image-gen <provider> --prompt "..." --output /path/to/image.png
 ```
 
 ## Providers
@@ -33,6 +29,7 @@ bun run cli.ts <provider> --prompt "..." --output /path/to/image.png
 | `--prompt`       | `-p`  | Yes      | Image description or editing instructions         |
 | `--output`       | `-o`  | Yes      | Output file path (extension must match provider)  |
 | `--input`        | `-i`  | No       | Input image(s) for editing; repeatable, comma-separated |
+| `--force`        | `-f`  | No       | Overwrite output file if it already exists               |
 
 The prompt can also be passed as positional args or piped via stdin.
 
@@ -67,42 +64,42 @@ The prompt can also be passed as positional args or piped via stdin.
 
 Generate with OpenAI:
 ```bash
-bun run cli.ts openai --prompt "a cat in a spacesuit" --output ./cat.png
+image-gen openai --prompt "a cat in a spacesuit" --output ./cat.png
 ```
 
 Generate with Gemini at 16:9:
 ```bash
-bun run cli.ts gemini -p "sunset over mountains" -o ./sunset.png --aspect-ratio 16:9
+image-gen gemini -p "sunset over mountains" -o ./sunset.png --aspect-ratio 16:9
 ```
 
 Generate with Grok at 2k:
 ```bash
-bun run cli.ts grok -p "neon city street" -o ./city.jpg --resolution 2k
+image-gen grok -p "neon city street" -o ./city.jpg --resolution 2k
 ```
 
 Edit an existing image:
 ```bash
-bun run cli.ts openai -p "add a rainbow" -o ./edited.png --input ./original.png
+image-gen openai -p "add a rainbow" -o ./edited.png --input ./original.png
 ```
 
 Pipe prompt from stdin:
 ```bash
-echo "a peaceful garden" | bun run cli.ts gemini -o ./garden.png
+echo "a peaceful garden" | image-gen gemini -o ./garden.png
 ```
 
 High quality transparent PNG:
 ```bash
-bun run cli.ts openai -p "logo of a rocket" -o ./logo.png --quality high --background transparent
+image-gen openai -p "logo of a rocket" -o ./logo.png --quality high --background transparent
 ```
 
 ## Key management
 
 ```bash
-bun run cli.ts keys list                     # Show all API key statuses
-bun run cli.ts keys set openai sk-...        # Set a key directly
-echo "sk-..." | bun run cli.ts keys set openai  # Set a key via stdin
-bun run cli.ts keys get openai               # Print key value
-bun run cli.ts keys delete openai            # Remove a key
+image-gen keys list                     # Show all API key statuses
+image-gen keys set openai sk-...        # Set a key directly
+echo "sk-..." | image-gen keys set openai  # Set a key via stdin
+image-gen keys get openai               # Print key value
+image-gen keys delete openai            # Remove a key
 ```
 
 Keys are stored in `~/.config/image-gen/config.json`.
@@ -126,5 +123,5 @@ When the user asks to generate an image:
 
 1. Pick the provider based on user preference, or default to OpenAI if no preference stated.
 2. Choose an appropriate output path -- use the current working directory unless the user specifies otherwise. Match the file extension to the provider's supported formats.
-3. Run the CLI command from the image-gen project directory.
+3. Run the `image-gen` command directly (it is installed globally).
 4. After generation, read the output image file to show it to the user.

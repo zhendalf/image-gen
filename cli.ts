@@ -35,9 +35,9 @@ import {
 } from "./schemas.ts";
 
 export type ParsedArgs =
-  | { mode: "openai"; params: OpenAIParams }
-  | { mode: "gemini"; params: GeminiParams }
-  | { mode: "grok"; params: GrokParams }
+  | { mode: "openai"; params: OpenAIParams; force?: boolean }
+  | { mode: "gemini"; params: GeminiParams; force?: boolean }
+  | { mode: "grok"; params: GrokParams; force?: boolean }
   | { mode: "keys"; action: "list" | "set" | "get" | "delete"; provider?: KeyProvider; value?: string }
   | { mode: "help"; message?: string };
 
@@ -47,6 +47,7 @@ type ParseState = {
 };
 
 const SHORT_ALIASES = shortAliasToFlag();
+const BOOLEAN_FLAGS = new Set(commonFlags.filter((f) => f.boolean).map((f) => f.name));
 
 function printUsage(message?: string) {
   if (message) {
@@ -176,6 +177,11 @@ function parseCommandArgs(command: Provider, args: string[]): ParsedArgs | { sta
         continue;
       }
 
+      if (BOOLEAN_FLAGS.has(flag)) {
+        pushValue(state, flag, "true");
+        continue;
+      }
+
       let value = inlineValue;
       if (value === undefined) {
         value = args[i + 1];
@@ -202,6 +208,11 @@ function parseCommandArgs(command: Provider, args: string[]): ParsedArgs | { sta
 
       if (!knownFlags.has(alias)) {
         unknownFlags.push(token);
+        continue;
+      }
+
+      if (BOOLEAN_FLAGS.has(alias)) {
+        pushValue(state, alias, "true");
         continue;
       }
 
@@ -292,7 +303,8 @@ function parseOpenAIArgs(state: ParseState): ParsedArgs {
     };
   }
 
-  return { mode: "openai", params: validated.data };
+  const force = lastValue(state, "force") === "true";
+  return { mode: "openai", params: validated.data, ...(force && { force }) };
 }
 
 function parseGeminiArgs(state: ParseState): ParsedArgs {
@@ -336,7 +348,8 @@ function parseGeminiArgs(state: ParseState): ParsedArgs {
     };
   }
 
-  return { mode: "gemini", params: validated.data };
+  const force = lastValue(state, "force") === "true";
+  return { mode: "gemini", params: validated.data, ...(force && { force }) };
 }
 
 function parseGrokArgs(state: ParseState): ParsedArgs {
@@ -380,7 +393,8 @@ function parseGrokArgs(state: ParseState): ParsedArgs {
     };
   }
 
-  return { mode: "grok", params: validated.data };
+  const force = lastValue(state, "force") === "true";
+  return { mode: "grok", params: validated.data, ...(force && { force }) };
 }
 
 const VALID_KEY_PROVIDERS: KeyProvider[] = ["openai", "gemini", "grok"];
@@ -517,6 +531,14 @@ async function run() {
   if (parsed.mode === "help") {
     printUsage(parsed.message);
     process.exit(parsed.message ? 1 : 0);
+  }
+
+  if (!parsed.force) {
+    const outputFile = Bun.file(parsed.params.output_path);
+    if (await outputFile.exists()) {
+      console.error(`Error: output file already exists: ${parsed.params.output_path}\nUse -f or --force to overwrite.`);
+      process.exit(1);
+    }
   }
 
   try {

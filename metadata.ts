@@ -23,6 +23,7 @@ type FlagSpec = {
   description: string;
   required?: boolean;
   repeatable?: boolean;
+  boolean?: boolean;
   defaultValue?: string;
   allowedValues?: readonly string[];
 };
@@ -55,6 +56,12 @@ export const commonFlags: readonly FlagSpec[] = [
     short: "-i",
     description: `${sharedDescriptions.inputImages}; repeatable and comma-separated values are supported`,
     repeatable: true,
+  },
+  {
+    name: "force",
+    short: "-f",
+    description: "Overwrite output file if it already exists",
+    boolean: true,
   },
 ] as const;
 
