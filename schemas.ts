@@ -37,13 +37,13 @@ export const openAIInputShape = {
 export const geminiInputShape = {
   prompt: z.string().describe(sharedDescriptions.prompt),
   output_path: z.string().describe(sharedDescriptions.outputPath),
-  model: geminiModelSchema.default("gemini-3.1-flash-image-preview").describe("Model"),
+  model: geminiModelSchema.default("gemini-3-pro-image-preview").describe("Model"),
   input_images: z.array(z.string()).optional().describe(sharedDescriptions.inputImages),
   aspect_ratio: geminiAspectRatioSchema.optional().describe("Aspect ratio"),
   image_size: geminiImageSizeSchema.optional().describe("Image size"),
 } as const;
 
-export const grokModelSchema = z.enum(["grok-2-image"]);
+export const grokModelSchema = z.enum(["grok-imagine-image-quality", "grok-imagine-image", "grok-2-image"]);
 export const grokAspectRatioSchema = z.enum([
   "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "2:1", "1:2",
   "19.5:9", "9:19.5", "20:9", "9:20",
@@ -53,7 +53,7 @@ export const grokResolutionSchema = z.enum(["1k", "2k"]);
 export const grokInputShape = {
   prompt: z.string().describe(sharedDescriptions.prompt),
   output_path: z.string().describe(sharedDescriptions.outputPath),
-  model: grokModelSchema.default("grok-2-image").describe("Model"),
+  model: grokModelSchema.default("grok-imagine-image-quality").describe("Model"),
   input_images: z.array(z.string()).optional().describe(sharedDescriptions.inputImages),
   aspect_ratio: grokAspectRatioSchema.optional().describe("Aspect ratio"),
   resolution: grokResolutionSchema.optional().describe("Image resolution (1k or 2k)"),

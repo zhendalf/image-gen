@@ -70,7 +70,7 @@ export const providerSpecs: Record<Provider, ProviderSpec> = {
       {
         name: "model",
         description: "Model",
-        defaultValue: "grok-2-image",
+        defaultValue: "grok-imagine-image-quality",
         allowedValues: grokModelSchema.options,
       },
       {

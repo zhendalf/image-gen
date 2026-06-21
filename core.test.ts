@@ -192,7 +192,7 @@ describe("core provider request mapping", () => {
     expect(request?.model).toBe("gemini-3-pro-image-preview");
   });
 
-  it("uses gemini-3.1-flash-image-preview (Nano Banana 2) as the default Gemini model", async () => {
+  it("generates with gemini-3.1-flash-image-preview (Nano Banana 2)", async () => {
     const outputPath = tempPath("gemini-nb2-output.png");
     let request: Record<string, unknown> | undefined;
 
