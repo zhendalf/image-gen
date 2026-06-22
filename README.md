@@ -15,7 +15,7 @@ bun install
 Install the published CLI globally:
 
 ```bash
-npm install -g @ebeloded/image-gen
+bun add -g @ebeloded/image-gen
 ```
 
 Set API keys (use whichever providers you need):

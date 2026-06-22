@@ -16,7 +16,7 @@ img --help
 Install the package globally when the CLI is missing:
 
 ```bash
-npm install -g @ebeloded/image-gen
+bun add -g @ebeloded/image-gen
 ```
 
 The package requires Bun on the machine because the CLI entrypoint uses `#!/usr/bin/env bun`.
