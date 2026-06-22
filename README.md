@@ -25,26 +25,26 @@ export XAI_API_KEY="..."
 Store keys persistently in `~/.config/image-gen/config.json`:
 
 ```bash
-image-gen keys set openai sk-proj-...
-image-gen keys set gemini AIza...
-image-gen keys set grok xai-...
+img keys set openai sk-proj-...
+img keys set gemini AIza...
+img keys set grok xai-...
 ```
 
 Or pipe the key to avoid it appearing in shell history:
 
 ```bash
-echo "sk-proj-..." | image-gen keys set openai
+echo "sk-proj-..." | img keys set openai
 ```
 
 View and manage keys:
 
 ```bash
-image-gen keys               # show all key statuses (masked)
-image-gen keys get openai    # print raw key value
-image-gen keys delete openai # remove a key
+img keys               # show all key statuses (masked)
+img keys get openai    # print raw key value
+img keys delete openai # remove a key
 ```
 
-Environment variables (`OPENAI_API_KEY`, `GEMINI_API_KEY`/`GOOGLE_API_KEY`, `XAI_API_KEY`) still work alongside the config file. Both are shown in `image-gen keys list`.
+Environment variables (`OPENAI_API_KEY`, `GEMINI_API_KEY`/`GOOGLE_API_KEY`, `XAI_API_KEY`) still work alongside the config file. Both are shown in `img keys list`.
 
 A local `.image-gen.json` in the working directory takes precedence over the user config (for project-level overrides).
 
@@ -56,21 +56,25 @@ Run directly from this repo:
 bun run cli.ts --help
 ```
 
-After a package install or link, the `image-gen` binary is on your `PATH`:
+After a package install or link, the `img` and `image-gen` binaries are on your `PATH`:
 
 ```bash
-image-gen --help
+img --help
 ```
+
+The longer `image-gen` binary is also available as a compatibility alias.
 
 ## Commands
 
 ```bash
-image-gen openai [flags]
-image-gen gemini [flags]
-image-gen grok   [flags]
-image-gen keys   [subcommand]
-image-gen --help
+img openai [flags]
+img gemini [flags]
+img grok   [flags]
+img keys   [subcommand]
+img --help
 ```
+
+`image-gen` is an equivalent longer binary alias, so `image-gen openai ...` works the same as `img openai ...`.
 
 ## CLI Flags (Full Reference)
 
@@ -91,7 +95,7 @@ Permissive CLI input forms:
 - short aliases (`-p`, `-o`, `-i`, `-f`)
 - positional prompt fallback when `--prompt`/`-p` is omitted
 
-OpenAI flags (`image-gen openai`):
+OpenAI flags (`img openai`):
 
 | Flag | Required | Default | Allowed values |
 |---|---|---|---|
@@ -102,7 +106,7 @@ OpenAI flags (`image-gen openai`):
 
 OpenAI output file extensions: `.png`, `.jpg`, `.jpeg`, `.webp`
 
-Gemini flags (`image-gen gemini`):
+Gemini flags (`img gemini`):
 
 | Flag | Required | Default | Allowed values |
 |---|---|---|---|
@@ -112,7 +116,7 @@ Gemini flags (`image-gen gemini`):
 
 Gemini output file extensions: `.png`
 
-Grok flags (`image-gen grok`):
+Grok flags (`img grok`):
 
 | Flag | Required | Default | Allowed values |
 |---|---|---|---|
@@ -127,7 +131,7 @@ Grok output file extensions: `.jpg`, `.jpeg`
 Generate with OpenAI:
 
 ```bash
-image-gen openai \
+img openai \
   --prompt "A neon cat in rainy Tokyo, cinematic lighting" \
   --output ./cat.png
 ```
@@ -135,19 +139,19 @@ image-gen openai \
 Generate with OpenAI by piping prompt from stdin:
 
 ```bash
-cat prompt.txt | image-gen openai --output ./cat.png
+cat prompt.txt | img openai --output ./cat.png
 ```
 
 Or with stdin redirection:
 
 ```bash
-image-gen openai --output ./cat.png < prompt.txt
+img openai --output ./cat.png < prompt.txt
 ```
 
 Edit with OpenAI:
 
 ```bash
-image-gen openai \
+img openai \
   --prompt "Add snow and keep the cat centered" \
   --output ./cat-snow.png \
   --input ./cat.png
@@ -156,7 +160,7 @@ image-gen openai \
 Generate with Gemini:
 
 ```bash
-image-gen gemini \
+img gemini \
   --prompt "A ceramic teapot product photo on white background" \
   --output ./teapot.png \
   --aspect-ratio 4:3 \
@@ -166,7 +170,7 @@ image-gen gemini \
 Edit with Gemini and multiple references:
 
 ```bash
-image-gen gemini \
+img gemini \
   --prompt "Combine both references into one consistent illustration" \
   --output ./combined.png \
   --input ./ref-1.png \
@@ -226,9 +230,9 @@ Error: Missing XAI_API_KEY environment variable
 Fix — set keys via config (preferred) or environment variables:
 
 ```bash
-image-gen keys set openai sk-proj-...
-image-gen keys set gemini AIza...
-image-gen keys set grok xai-...
+img keys set openai sk-proj-...
+img keys set gemini AIza...
+img keys set grok xai-...
 ```
 
 ### Invalid or Unsupported Flags
