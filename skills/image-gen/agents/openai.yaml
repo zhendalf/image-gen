@@ -1,0 +1,4 @@
+interface:
+  display_name: "Image Gen"
+  short_description: "Use the image generation CLI"
+  default_prompt: "Use $image-gen to generate an image with the local img CLI."

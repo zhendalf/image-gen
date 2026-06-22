@@ -12,6 +12,12 @@ Command-line tool for generating and editing images with OpenAI (GPT Image), Goo
 bun install
 ```
 
+Install the published CLI globally:
+
+```bash
+npm install -g @ebeloded/image-gen
+```
+
 Set API keys (use whichever providers you need):
 
 ```bash
