@@ -20,7 +20,12 @@ export const openAISizeSchema = z.enum([
 export const openAIQualitySchema = z.enum(["auto", "high", "medium", "low"]);
 export const openAIBackgroundSchema = z.enum(["auto", "transparent", "opaque"]);
 
-export const geminiModelSchema = z.enum(["gemini-2.5-flash-image", "gemini-3-pro-image-preview", "gemini-3.1-flash-image-preview"]);
+export const geminiModelSchema = z.enum([
+  "gemini-2.5-flash-image",
+  "gemini-3-pro-image-preview",
+  "gemini-3.1-flash-image-preview",
+  "gemini-3.1-flash-lite-image",
+]);
 export const geminiAspectRatioSchema = z.enum(["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]);
 export const geminiImageSizeSchema = z.enum(["1K", "2K", "4K"]);
 

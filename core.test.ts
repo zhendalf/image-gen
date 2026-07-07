@@ -223,4 +223,32 @@ describe("core provider request mapping", () => {
     const config = request?.config as Record<string, unknown>;
     expect(config?.responseModalities).toEqual(["IMAGE", "TEXT"]);
   });
+
+  it("generates with gemini-3.1-flash-lite-image (Nano Banana 2 Lite)", async () => {
+    const outputPath = tempPath("gemini-nb2-lite-output.png");
+    let request: Record<string, unknown> | undefined;
+
+    setClientsForTests({
+      openai: null,
+      google: {
+        models: {
+          generateContent: async (params) => {
+            request = params as unknown as Record<string, unknown>;
+            return {
+              candidates: [{ content: { parts: [{ inlineData: { data: Buffer.from("nb2-lite").toString("base64") } }] } }],
+            };
+          },
+        },
+      },
+    });
+
+    const result = await generateGeminiImage({
+      prompt: "nano banana lite test",
+      output_path: outputPath,
+      model: "gemini-3.1-flash-lite-image",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(request?.model).toBe("gemini-3.1-flash-lite-image");
+  });
 });
